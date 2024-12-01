@@ -1,19 +1,24 @@
 <?php
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['difficulty'])) {
-    $difficulty = $_POST['difficulty'];
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['operation'])) {
+    $operation = $_POST['operation'];
     $num1 = rand(1, 10);
     $num2 = rand(1, 10);
 
-    if ($difficulty == 'easy') {
-        $num1 = rand(1, 5);
-    } elseif ($difficulty == 'hard') {
-        $num1 = rand(10, 20);
+    if ($operation == 'add') {
+        $answer = $num1 + $num2;
+        $_SESSION['question'] = "$num1 + $num2 = ?";
+    } elseif ($operation == 'subtract') {
+        $answer = $num1 - $num2;
+        $_SESSION['question'] = "$num1 - $num2 = ?";
+    } elseif ($operation == 'multiply') {
+        $answer = $num1 * $num2;
+        $_SESSION['question'] = "$num1 * $num2 = ?";
+    } else {
+        echo "Invalid operation!";
     }
-
-    $answer = $num1 + $num2;
-    $_SESSION['question'] = "$num1 + $num2 = ?";
+    
     $_SESSION['answer'] = $answer;
     echo $_SESSION['question'];
 }
