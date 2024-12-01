@@ -1,17 +1,23 @@
 <?php
 session_start();
 
+if (isset($_POST['reset'])) {
+    $_SESSION['score'] = 0;
+    echo "Score has been reset.";
+}
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['answer'])) {
-    if (is_numeric($_POST['answer'])) {  // Check if input is numeric
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['answer'])) {
+    if (empty($_POST['answer'])) {
+        echo "Please provide an answer.";
+    } elseif (!is_numeric($_POST['answer'])) {
+        echo "Invalid input. Please enter a number.";
+    } else {
         if ($_POST['answer'] == $_SESSION['answer']) {
             $_SESSION['score']++;
             echo "Correct!";
         } else {
-            echo "Wrong answer!";
+            echo "Incorrect! The correct answer is: " . $_SESSION['answer'];
         }
-    } else {
-        echo "Please enter a valid number!";
     }
 }
 ?>
