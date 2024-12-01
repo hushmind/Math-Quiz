@@ -1,19 +1,18 @@
 <?php
 session_start();
 
-if (isset($_SESSION['score'])) {
-    echo "Your score: " . $_SESSION['score'];
-    // Display leaderboard (wrong data type, leaderboard as string)
-    echo "<br>Leaderboard: Player 1 - '10' points, Player 2 - '8' points";  // Error: Points should be numeric
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['answer'])) {
-    if (empty($_POST['answer'])) {
-        echo "Please provide an answer.";
-    } elseif (!is_numeric($_POST['answer'])) {
+    $startTime = time();
+    $answer = $_POST['answer'];
+    
+    $timeTaken = time() - $startTime;
+    
+    if ($timeTaken > 30) {
+        echo "Time's up!";
+    } elseif (!is_numeric($answer)) {
         echo "Invalid input. Please enter a number.";
     } else {
-        if ($_POST['answer'] == $_SESSION['answer']) {
+        if ($answer == $_SESSION['answer']) {
             $_SESSION['score']++;
             echo "Correct!";
         } else {
