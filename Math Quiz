@@ -1,5 +1,126 @@
 <?php
 session_start();
+
+if (!isset($_SESSION['score'])) {
+    $_SESSION['score'] = 0;
+}
+if (!isset($_SESSION['correct'])) {
+    $_SESSION['correct'] = 0;
+}
+if (!isset($_SESSION['wrong'])) {
+    $_SESSION['wrong'] = 0;
+}
+if (!isset($_SESSION['operation'])) {
+    $_SESSION['operation'] = 'add';
+}
+if (!isset($_SESSION['difficulty'])) {
+    $_SESSION['difficulty'] = 'easy';
+}
+
+function generateQuestion($difficulty, $operation)
+{
+    switch ($difficulty) {
+        case 'easy':
+            $range = [5, 10];
+            break;
+        case 'average':
+            $range = [10, 30];
+            break;
+        case 'difficult':
+            $range = [30, 50];
+            break;
+        default:
+            $range = [5, 10];
+    }
+
+    $num1 = rand($range[0], $range[1]);
+    $num2 = rand($range[0], $range[1]);
+    $answer = 0;
+
+    switch ($operation) {
+        case 'add':
+            $answer = $num1 + $num2;
+            $_SESSION['question'] = "$num1 + $num2";
+            break;
+        case 'subtract':
+            $answer = $num1 - $num2;
+            $_SESSION['question'] = "$num1 - $num2";
+            break;
+        case 'multiply':
+            $answer = $num1 * $num2;
+            $_SESSION['question'] = "$num1 × $num2";
+            break;
+        case 'divide':
+            if ($num2 == 0) $num2 = 1;
+            $answer = $num1 / $num2;
+            $_SESSION['question'] = "$num1 ÷ $num2";
+            break;
+        default:
+            $answer = $num1 + $num2;
+            $_SESSION['question'] = "$num1 + $num2";
+    }
+
+    $_SESSION['answer'] = $answer;
+
+    $choices = [$answer];
+    while (count($choices) < 4) {
+        $fakeAnswer = rand($range[0] * 2, $range[1] * 2);
+        if (!in_array($fakeAnswer, $choices)) {
+            $choices[] = $fakeAnswer;
+        }
+    }
+
+    shuffle($choices);
+    $_SESSION['choices'] = $choices;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['difficulty'])) {
+        $_SESSION['difficulty'] = $_POST['difficulty'];
+    }
+    if (isset($_POST['operation'])) {
+        $_SESSION['operation'] = $_POST['operation'];
+    }
+    if (isset($_POST['start'])) {
+        generateQuestion($_SESSION['difficulty'], $_SESSION['operation']);
+    }
+    if (isset($_POST['answer'])) {
+        if ($_POST['answer'] == $_SESSION['answer']) {
+            $_SESSION['correct']++;
+            $feedbackMessages = [
+                "You're genius!",
+                "Fantastic!",
+                "You're an idol"
+            ];
+            $feedback = "<p style='color:green;'>{$feedbackMessages[array_rand($feedbackMessages)]}</p>";
+        } else {
+            $_SESSION['wrong']++;
+            $remarksMessages = [
+                "It's better to try than to regret",
+                "Try again, you're almost there!",
+                "You're greater than that"
+            ];
+            $feedback = "<p style='color:red;'>{$remarksMessages[array_rand($remarksMessages)]}</p>";
+        }
+
+        if ($_SESSION['correct'] + $_SESSION['wrong'] < 10) {
+            generateQuestion($_SESSION['difficulty'], $_SESSION['operation']);
+        } else {
+            $feedback = "<p style='color:blue;'>Game Over! Your final score: {$_SESSION['score']}</p>";
+            session_destroy();
+            session_start();
+        }
+    }
+    if (isset($_POST['reset'])) {
+        session_destroy();
+        session_start();
+        $_SESSION['score'] = 0;
+        $_SESSION['correct'] = 0;
+        $_SESSION['wrong'] = 0;
+        $_SESSION['operation'] = 'add';
+        $_SESSION['difficulty'] = 'easy'; 
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -8,56 +129,115 @@ session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .quiz-section, .difficulty-section {
+            width: 45%;
+        }
+        .difficulty-section {
+            border-right: 1px solid #ccc;
+            padding-right: 20px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .quiz-section {
+            display: none; /* Initially hidden */
+        }
+        .quiz-section.active {
+            display: block; /* Show the quiz section if difficulty is selected */
+        }
+        .settings-section {
+            margin-top: 20px;
+        }
+        .difficulty-choices, .operation-choices {
+            display: none;
+        }
+        .difficulty-choices.active, .operation-choices.active {
+            display: block;
+        }
+        #start-btn, #reset-btn {
+            display: none; /* Initially hidden */
+            margin-top: 20px;
+        }
+        #start-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .leaderboard {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Math Quiz</h1>
+    <div class="container">
+        <!-- Difficulty Section -->
+        <div class="difficulty-section">
+            <button type="button" id="settings-btn">Settings</button>
 
-    <form method="POST">
-        <label for="difficulty">Select Difficulty:</label>
-        <select name="difficulty" required>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-        </select>
-        <br>
+            <div class="difficulty-choices">
+                <h2>Select Difficulty</h2>
+                <form method="post">
+                    <label><input type="radio" name="difficulty" value="easy" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'easy' ? 'checked' : '' ?>> Easy</label><br>
+                    <label><input type="radio" name="difficulty" value="average" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'average' ? 'checked' : '' ?>> Average</label><br>
+                    <label><input type="radio" name="difficulty" value="difficult" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'difficult' ? 'checked' : '' ?>> Difficult</label><br>
+                </form>
+            </div>
 
-        <label for="operation">Select Operation:</label>
-        <select name="operation" required>
-            <option value="add">Addition</option>
-            <option value="subtract">Subtraction</option>
-            <option value="multiply">Multiplication</option>
-        </select>
-        <br>
+            <div class="operation-choices">
+                <h2>Select Operation</h2>
+                <form method="post">
+                    <label><input type="radio" name="operation" value="add" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'add' ? 'checked' : '' ?>> Addition</label><br>
+                    <label><input type="radio" name="operation" value="subtract" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'subtract' ? 'checked' : '' ?>> Subtraction</label><br>
+                    <label><input type="radio" name="operation" value="multiply" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'multiply' ? 'checked' : '' ?>> Multiplication</label><br>
+                    <label><input type="radio" name="operation" value="divide" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'divide' ? 'checked' : '' ?>> Division</label><br><br>
+                    <button type="submit" name="start" id="start-btn">Start Quiz</button>
+                </form>
+            </div>
+        </div>
 
-        <button type="submit">Generate Question</button>
+        <div class="quiz-section <?= isset($_SESSION['question']) ? 'active' : '' ?>">
+            <h2>Question:</h2>
+            <p><?= isset($_SESSION['question']) ? $_SESSION['question'] : '' ?></p>
+            <form method="post">
+                <?php if (isset($_SESSION['choices'])): ?>
+                    <?php foreach ($_SESSION['choices'] as $choice): ?>
+                        <label><input type="radio" name="answer" value="<?= $choice ?>"> <?= $choice ?></label><br>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <button type="submit">Submit Answer</button>
+            </form>
+            <?php if (isset($feedback)) echo $feedback; ?>
+        </div>
+    </div>
+
+    <div class="leaderboard">
+        <h3>Leaderboard</h3>
+        <p>Correct: <?= $_SESSION['correct'] ?></p>
+        <p>Incorrect: <?= $_SESSION['wrong'] ?></p>
+    </div>
+
+    <form method="post">
+        <button type="submit" name="reset" id="reset-btn">Reset Quiz</button>
     </form>
 
-    <form method="POST">
-        <label for="answer">Your Answer:</label>
-        <input type="text" name="answer" required>
-        <button type="submit">Submit Answer</button>
-    </form>
-
-    <form method="POST">
-        <button name="reset" type="submit">Reset Score</button>
-    </form>
-
-    <?php
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['answer'])) {
-        if (empty($_POST['answer'])) {
-            echo "Please provide an answer.";
-        } elseif (!is_numeric($_POST['answer'])) {
-            echo "Invalid input. Please enter a number.";
-        } else {
-            if ($_POST['answer'] == $_SESSION['answer']) {
-                $_SESSION['score']++;
-                echo "Correct!";
-            } else {
-                echo "Incorrect! The correct answer is: " . $_SESSION['answer'];
-            }
-        }
-    }
-    ?>
+    <script>
+        document.getElementById("settings-btn").addEventListener("click", function() {
+            document.querySelector(".difficulty-choices").classList.toggle("active");
+            document.querySelector(".operation-choices").classList.toggle("active");
+            document.getElementById("start-btn").style.display = 'block';
+        });
+    </script>
 </body>
 </html>
