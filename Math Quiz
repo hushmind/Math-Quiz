@@ -51,8 +51,8 @@ function generateQuestion($difficulty, $operation)
             $_SESSION['question'] = "$num1 × $num2";
             break;
         case 'divide':
-            if ($num2 == 0) $num2 = 1;
-            $answer = $num1 / $num2;
+            $num2 = $num2 == 0 ? 1 : $num2;
+            $answer = round($num1 / $num2, 2);
             $_SESSION['question'] = "$num1 ÷ $num2";
             break;
         default:
@@ -142,37 +142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .quiz-section, .difficulty-section {
             width: 45%;
         }
-        .difficulty-section {
-            border-right: 1px solid #ccc;
-            padding-right: 20px;
-        }
         button {
             margin: 5px;
             padding: 10px;
             font-size: 14px;
         }
-        .quiz-section {
-            display: none; /* Initially hidden */
-        }
-        .quiz-section.active {
-            display: block; /* Show the quiz section if difficulty is selected */
-        }
         .settings-section {
             margin-top: 20px;
-        }
-        .difficulty-choices, .operation-choices {
-            display: none;
-        }
-        .difficulty-choices.active, .operation-choices.active {
-            display: block;
-        }
-        #start-btn, #reset-btn {
-            display: none; /* Initially hidden */
-            margin-top: 20px;
-        }
-        #start-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
         }
         .leaderboard {
             margin-top: 20px;
@@ -182,34 +158,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <h1>Math Quiz</h1>
     <div class="container">
-        <!-- Difficulty Section -->
         <div class="difficulty-section">
-            <button type="button" id="settings-btn">Settings</button>
-
-            <div class="difficulty-choices">
-                <h2>Select Difficulty</h2>
-                <form method="post">
-                    <label><input type="radio" name="difficulty" value="easy" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'easy' ? 'checked' : '' ?>> Easy</label><br>
-                    <label><input type="radio" name="difficulty" value="average" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'average' ? 'checked' : '' ?>> Average</label><br>
-                    <label><input type="radio" name="difficulty" value="difficult" <?= isset($_SESSION['difficulty']) && $_SESSION['difficulty'] == 'difficult' ? 'checked' : '' ?>> Difficult</label><br>
-                </form>
-            </div>
-
-            <div class="operation-choices">
-                <h2>Select Operation</h2>
-                <form method="post">
-                    <label><input type="radio" name="operation" value="add" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'add' ? 'checked' : '' ?>> Addition</label><br>
-                    <label><input type="radio" name="operation" value="subtract" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'subtract' ? 'checked' : '' ?>> Subtraction</label><br>
-                    <label><input type="radio" name="operation" value="multiply" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'multiply' ? 'checked' : '' ?>> Multiplication</label><br>
-                    <label><input type="radio" name="operation" value="divide" <?= isset($_SESSION['operation']) && $_SESSION['operation'] == 'divide' ? 'checked' : '' ?>> Division</label><br><br>
-                    <button type="submit" name="start" id="start-btn">Start Quiz</button>
-                </form>
-            </div>
+            <h2>Select Difficulty</h2>
+            <form method="post">
+                <label><input type="radio" name="difficulty" value="easy" <?= $_SESSION['difficulty'] == 'easy' ? 'checked' : '' ?>> Easy</label><br>
+                <label><input type="radio" name="difficulty" value="average" <?= $_SESSION['difficulty'] == 'average' ? 'checked' : '' ?>> Average</label><br>
+                <label><input type="radio" name="difficulty" value="difficult" <?= $_SESSION['difficulty'] == 'difficult' ? 'checked' : '' ?>> Difficult</label><br>
+                <button type="submit" name="start">Start Quiz</button>
+            </form>
         </div>
 
-        <div class="quiz-section <?= isset($_SESSION['question']) ? 'active' : '' ?>">
+        <div class="quiz-section">
             <h2>Question:</h2>
-            <p><?= isset($_SESSION['question']) ? $_SESSION['question'] : '' ?></p>
+            <p><?= isset($_SESSION['question']) ? $_SESSION['question'] : 'Select difficulty and start the quiz.' ?></p>
             <form method="post">
                 <?php if (isset($_SESSION['choices'])): ?>
                     <?php foreach ($_SESSION['choices'] as $choice): ?>
@@ -229,15 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <form method="post">
-        <button type="submit" name="reset" id="reset-btn">Reset Quiz</button>
+        <button type="submit" name="reset">Reset Quiz</button>
     </form>
-
-    <script>
-        document.getElementById("settings-btn").addEventListener("click", function() {
-            document.querySelector(".difficulty-choices").classList.toggle("active");
-            document.querySelector(".operation-choices").classList.toggle("active");
-            document.getElementById("start-btn").style.display = 'block';
-        });
-    </script>
 </body>
 </html>
