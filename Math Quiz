@@ -1,23 +1,63 @@
 <?php
 session_start();
+?>
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['answer'])) {
-    $startTime = time();
-    $answer = $_POST['answer'];
-    
-    $timeTaken = time() - $startTime;
-    
-    if ($timeTaken > 30) {
-        echo "Time's up!";
-    } elseif (!is_numeric($answer)) {
-        echo "Invalid input. Please enter a number.";
-    } else {
-        if ($answer == $_SESSION['answer']) {
-            $_SESSION['score']++;
-            echo "Correct!";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz</title>
+</head>
+<body>
+    <h1>Math Quiz</h1>
+
+    <form method="POST">
+        <label for="difficulty">Select Difficulty:</label>
+        <select name="difficulty" required>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+        <br>
+
+        <label for="operation">Select Operation:</label>
+        <select name="operation" required>
+            <option value="add">Addition</option>
+            <option value="subtract">Subtraction</option>
+            <option value="multiply">Multiplication</option>
+        </select>
+        <br>
+
+        <button type="submit">Generate Question</button>
+    </form>
+
+    <form method="POST">
+        <label for="answer">Your Answer:</label>
+        <input type="text" name="answer" required>
+        <button type="submit">Submit Answer</button>
+    </form>
+
+    <form method="POST">
+        <button name="reset" type="submit">Reset Score</button>
+    </form>
+
+    <?php
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['answer'])) {
+        if (empty($_POST['answer'])) {
+            echo "Please provide an answer.";
+        } elseif (!is_numeric($_POST['answer'])) {
+            echo "Invalid input. Please enter a number.";
         } else {
-            echo "Incorrect! The correct answer is: " . $_SESSION['answer'];
+            if ($_POST['answer'] == $_SESSION['answer']) {
+                $_SESSION['score']++;
+                echo "Correct!";
+            } else {
+                echo "Incorrect! The correct answer is: " . $_SESSION['answer'];
+            }
         }
     }
-}
-?>
+    ?>
+</body>
+</html>
